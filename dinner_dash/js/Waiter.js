@@ -103,7 +103,7 @@ function Waiter(config){
 	}
 
 	this.serveTo = function(table, clients){
-		walkTo(table, instance.arriveAtTheTable, 5, 0);
+		walkTo(table, instance.arriveAtTheTable, 0, -3);
 		_isAtTheOven = false;
 		currentTable = table;	
 		menu.hide();
@@ -140,7 +140,7 @@ function Waiter(config){
 	}
 
 	function cleanUp(table, clients){
-		walkTo(table, cleanTheTable, 5, 0);
+		walkTo(table, cleanTheTable, 6, -2);
 		_isAtTheOven = false;
 		menu.hide();
 	}
@@ -151,11 +151,11 @@ function Waiter(config){
 		var objectPositionY = Math.round(object.getSprite().getGlobalPosition().y / 25 - offsetY);
 		var gridBackup = grid.clone();
 		var path = finder.findPath(Math.round(sprite.y / 25), Math.round(sprite.x / 25), objectPositionY, objectPositionX, gridBackup);
-		//console.log(path);
+		console.log(path);
 		distance = 25;
 		time = distance / speed;
 		walkPath.walkAlongPath(time, path);
-		//drawGridCell(objectPositionX, objectPositionY, '#FFFFFF')
+		drawGridCell(objectPositionX, objectPositionY, '#FFFFFF')
 	}
 
 }
