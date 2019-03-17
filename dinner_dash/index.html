@@ -1,0 +1,244 @@
+<html>
+<head>
+	<title>Dinner Dash</title>
+	<script src="js/gameConfig.js"></script>
+	<script src="js/pixi.js"></script>
+	<script src="js/Waiter.js"></script>
+	<script src="js/TweenMax.min.js"></script>
+	<script src="js/Table.js"></script>
+	<script src="js/Clients.js"></script>
+	<script src="js/newOven.js"></script>
+	<script src="js/Bubble.js"></script>
+	<script src="js/Food.js"></script>
+	<script src="js/Clock.js"></script>
+	<script src="js/Cash.js"></script>
+	<script src="js/Door.js"></script>
+	<script src="js/Menu.js"></script>
+	<script src="js/Assets.js"></script>
+	<script src="js/Shop.js"></script>
+	<script src="js/ShopElement.js"></script>
+	<script src="js/Popup.js"></script>
+	<script src="js/GameManager.js"></script>
+	<script src="js/TableArea.js"></script>
+	<script src="js/Path.js"></script>
+	<script src="js/pathfinding-browser.min.js"></script>
+	<!-- <script src="js/Fridge.js"></script> -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body>
+<script>
+
+	var images = 'images/';
+	var currentClients = null;
+	var globalMouseX;
+	var globalMouseY;
+
+	var furnitureToPlace;
+
+	var app = new PIXI.Application(window.innerWidth,window.innerHeight,{backgroundColor: 0xffffc9});
+	document.body.appendChild(app.view);
+	var gridGraphics = new PIXI.Graphics();
+	app.stage.addChild(gridGraphics);
+
+	app.stage.interactive = true;
+
+	var bar = Assets.createSprite(images + 'bar.png');
+	app.stage.addChild(bar);
+	bar.scale.x = 0.5;
+	bar.scale.y = 0.25;
+	bar.anchor.x = 0.5;
+	bar.anchor.y = 0.5;
+	bar.x = window.innerWidth / 2;
+	bar.y = 8 * 25;
+
+	app.stage.on('mousemove', getCurrentMouse);
+
+	function getCurrentMouse(e){
+		globalMouseX = e.data.global.x;
+		globalMouseY = e.data.global.y;
+	}
+
+	function drawGridCell(i, j, color){
+		gridGraphics.lineStyle(2, 0xFF00FF, 1);
+		gridGraphics.beginFill(color, 0.35);
+		gridGraphics.drawRect(i * 25, j * 25, 25, 25);
+		gridGraphics.endFill();
+	}
+
+	function drawGrid(){
+		for(i = 0; i < 100; i++){
+			for(j = 0; j < 100; j++){
+				if(grid.nodes[i][j].walkable){
+					drawGridCell(i, j, 0xffffff);
+				}
+				else {
+					drawGridCell(i, j, 0x000000);
+				}
+			}
+		}
+	}
+
+	function setGrid(){
+		for(var i = 0; i < tables.children.length; i++){
+			var sprite = tables.children[i];
+			var pozX = Math.round(sprite.getGlobalPosition().x / 25);
+			var pozY = Math.round(sprite.getGlobalPosition().y / 25);
+			var width = Math.round(sprite.width / 25);
+			for(j = pozX; j < pozX + width; j++){
+				grid.setWalkableAt(pozY, j, false);
+			}
+			for(k = pozY; k < pozY + width; k++){
+				grid.setWalkableAt(k, pozX, false);
+				grid.setWalkableAt(k, pozX + width - 1, false);
+				grid.setWalkableAt(k, pozX + width, false);
+				grid.setWalkableAt(k, pozX - 1, false);
+			}
+			
+		}
+	}
+
+	var grid = new PF.Grid(100, 100);
+
+	var canPlaceFurniture = false;
+
+	var tableContainer = new PIXI.Container();
+	app.stage.addChild(tableContainer);
+	tableContainer.y = 11 * 25;
+
+	app.stage.on("click", placeFurniture);
+
+	function placeFurniture(e){
+		if(canPlaceFurniture == 1){
+			var furniture = Assets.createSprite(furnitureToPlace);
+			app.stage.addChild(furniture);
+			furniture.x = e.data.global.x;
+			furniture.y = e.data.global.y;
+		}
+		canPlaceFurniture = false;
+		GameManager.unsetCursor();
+	}
+
+	var tableDimension = Math.min(window.innerWidth, window.innerHeight);
+
+	var numTables = 3;
+	var spaceSize = 4;
+	var tableAreaGridMin = 6;
+	var tableAreaGridMax = 8;
+
+	var gridWindowDimension = Math.round(tableDimension / 25);
+	var tableAreaGrid = Math.round((gridWindowDimension - (numTables - 1) * spaceSize) / numTables) - 2;
+	tableAreaGrid += tableAreaGrid % 2;
+	if(tableAreaGrid < tableAreaGridMin){
+		tableAreaGrid = 6;
+	}
+	if(tableAreaGrid > tableAreaGridMax){
+		tableAreaGrid = 8;
+	}
+
+	var tableArea = new PIXI.Graphics();
+	tableArea.lineStyle(2, 0xFF00FF, 0);
+	tableArea.beginFill(0xFF00BB, 0);
+	tableArea.drawRoundedRect(0, 0, window.innerWidth, ((2 * tableAreaGrid) + spaceSize) * 25, 15);
+	tableArea.endFill();
+	tableContainer.addChild(tableArea);
+
+	var tables = new PIXI.Container();
+	tableContainer.addChild(tables);
+
+	var tableContainerWidth = tableContainer.width;
+	var tableContainerHeight = tableContainer.height;
+	
+
+	function drawTableSpaces(){
+		for(i = 0; i < 3; i++){
+			for(j = 0; j < 2; j++){
+				tableSpace = new TableArea(i, j, tableAreaGrid * 25, tableAreaGrid * 25);
+				var sprite = tableSpace.getSprite();
+				tables.addChild(sprite);
+				sprite.x = i * (tableAreaGrid + spaceSize) * 25; 
+				sprite.y = j * (tableAreaGrid + spaceSize) * 25;
+			}
+		}
+	}
+
+	drawTableSpaces();
+
+	var gridTablesWidth = Math.round(tables.width / 25);
+	var gridTablesHeight = Math.round(tables.height / 25);
+
+	tables.x = Math.round(tableArea.width / 25 / 2) * 25;
+	tables.y = Math.round(tableArea.height / 25 / 2) * 25;
+	tables.x += -Math.round(gridTablesWidth / 2) * 25;
+	tables.y += -Math.round(gridTablesHeight / 2) * 25;
+
+	setGrid();
+	//drawGrid();
+
+	var finder = new PF.AStarFinder();
+
+	var shopButton = Assets.createSprite(images + 'shop.png');
+	app.stage.addChild(shopButton);
+	shopButton.x = window.innerWidth / 1.05;
+	shopButton.interactive = true;
+	shopButton.buttonMode = true;
+	var shop = new Shop(config.shop);
+
+	shopButton.anchor.x = 0.5;
+
+	shopButton.on('click', function(){
+		shop.show();
+	});
+
+	var cash = new Cash();
+
+	app.stage.addChild(cash.getSprite());
+	app.stage.addChild(cash.getText());
+
+	var door = new Door();
+	app.stage.addChild(door.getSprite());
+
+	var menu = new Menu();
+
+	function drawClients(){
+		for(i = 0; i < 4; i++){
+			var clients = new Clients(door.getSprite().x, i * 100 + door.getSprite().y + 125);
+			app.stage.addChild(clients.getSprite());
+		}
+	}
+
+	drawClients();
+	//setInterval(drawClients, 20000);
+
+	function clientsClick(clients){
+		currentClients = clients;
+	}
+
+	function tableClick(table) {
+		if(table.getOccupy() == true && table.getClients().hasEaten() == true){
+			waiter.cleanTo(table, table.getClients());
+		}
+
+		else if(table.getOccupy() == true){
+			waiter.serveTo(table);
+		}
+		if(currentClients != null && table.getOccupy() == false) {
+			if(currentClients.checkIfPositioned() == false){
+				currentClients.walkToTable(table);
+				table.setOccupy(currentClients);
+				currentClients.getSprite().interactive = false;
+				currentClients = null;
+			}
+		}
+	}
+
+	var oven = new newOven();
+	app.stage.addChild(oven.getSprite());
+
+	var waiter = new Waiter(config.waiter);
+	app.stage.addChild(waiter.getSprite());
+	
+
+</script>
+</body>
+</html>
