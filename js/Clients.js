@@ -19,7 +19,7 @@
 		var eatTimer = null;
 		var currentTable = null;
 
-		var happyTime = 236000;
+		var happyTime = 36000;
 		var leaveTime = 216000;
 
 		var foodArray = [];
