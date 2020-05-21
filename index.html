@@ -199,16 +199,20 @@
 	app.stage.addChild(door.getSprite());
 
 	var menu = new Menu();
-
+	var clientsArray = [];
 	function drawClients(){
+		if (clientsArray.length != 0) {
+			return;
+		}
 		for(i = 0; i < 4; i++){
 			var clients = new Clients(door.getSprite().x, i * 100 + door.getSprite().y + 125);
+			clientsArray.push(clients);
 			app.stage.addChild(clients.getSprite());
 		}
 	}
 
 	drawClients();
-	//setInterval(drawClients, 20000);
+// 	setInterval(drawClients, 20000); 
 
 	function clientsClick(clients){
 		currentClients = clients;
